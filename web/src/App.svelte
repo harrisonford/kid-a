@@ -1,12 +1,15 @@
 <script>
   import Message from './lib/Message.svelte'
   import Composer from './lib/Composer.svelte'
+  import LevelMenu from './lib/LevelMenu.svelte'
 
   // chats live only in this browser (localStorage), one per level
   const store = {
     get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
     set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} },
   }
+  const num = (n) => n.toLocaleString('en-US')
+  const short = (n) => n.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 
   let levels = $state([])
   let level = $state(store.get('kid-a:level', null))
@@ -15,6 +18,12 @@
   let scroller
 
   const card = $derived(levels.find((l) => l.id === level))
+  // a turn is what you said and how it answered
+  const turns = $derived(history.reduce((ts, m) => {
+    if (m.who === 'me' || !ts.length) ts.push([])
+    ts.at(-1).push(m)
+    return ts
+  }, []))
 
   $effect(() => {
     if (level) {
@@ -57,26 +66,44 @@
 </script>
 
 <div class="app">
-  <header>
-    <b>kid-a</b>
-    <select bind:value={level} disabled={!levels.length}>
-      {#each levels as l (l.id)}<option value={l.id}>{l.id} · {l.name}</option>{/each}
-    </select>
-    <div class="card">{#if card}like a {card.human_age} · {card.summary}{:else}no level released yet{/if}</div>
-    <button onclick={clear} title="clear this chat">clear</button>
+  <header class:ruled={history.length}>
+    <div class="mark"><img src="/favicon.svg" alt="" /><span>kid-a</span></div>
+    <LevelMenu {levels} bind:level />
+    <div class="grow"></div>
+    <button class="clear" onclick={clear} disabled={!history.length} title="clear this chat">clear</button>
   </header>
 
   <main bind:this={scroller}>
-    <div class="log">
-      {#if !history.length}
-        <div class="empty">
-          Talk to it like you would to a small child.<br />It only knows what its level has learned.
-          {#if card}<div class="can">{card.can}</div>{/if}
+    {#if !history.length}
+      <div class="empty">
+        <img src="/favicon.svg" alt="" />
+        <div class="hello">
+          <div class="lead">Talk to it like you would to a small child.</div>
+          <div class="dim">It only knows what its level has learned.</div>
         </div>
-      {/if}
-      {#each history as m, i (i)}<Message {m} />{/each}
-      {#if busy}<div class="thinking">…</div>{/if}
-    </div>
+        {#if card}
+          <div class="facts">
+            <div class="dim">can</div><div>{card.can}</div>
+            <div class="dim">can't</div><div class="dim">{card.cannot}</div>
+            <div class="dim">size</div>
+            <div>
+              {#if card.parameters != null}<span class="nb" title="{num(card.parameters)} parameters">{short(card.parameters)} parameters</span>
+                <span class="dim"><span class="nb">· {num(card.clusters)} clusters</span> <span class="nb">· {num(card.moments_lived)} moments lived</span></span>
+              {:else}<span class="nb">{num(card.clusters)} clusters</span> <span class="dim nb">· {num(card.moments_lived)} moments lived</span>{/if}
+            </div>
+          </div>
+        {:else if levels.length === 0}
+          <div class="dim">No level released yet.</div>
+        {/if}
+      </div>
+    {:else}
+      <div class="log">
+        {#each turns as turn, i (i)}
+          <div class="turn">{#each turn as m, j (j)}<Message {m} />{/each}</div>
+        {/each}
+        {#if busy}<div class="thinking">···</div>{/if}
+      </div>
+    {/if}
   </main>
 
   <Composer onsend={send} disabled={busy || !level} />
@@ -84,12 +111,24 @@
 
 <style>
   .app { height: 100%; display: flex; flex-direction: column; }
-  header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
-  b { letter-spacing: .5px; }
-  .card { color: var(--dim); font-size: 13px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  main { flex: 1; overflow-y: auto; }
-  .log { max-width: 760px; margin: 0 auto; padding: 24px 16px 24px; }
-  .empty { color: var(--dim); text-align: center; margin-top: 16vh; }
-  .can { margin-top: 14px; font-size: 13px; }
-  .thinking { color: var(--dim); font-size: 20px; }
+  header { height: 52px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid transparent; }
+  header.ruled { border-bottom-color: var(--hair); }
+  .mark { display: flex; align-items: center; gap: 8px; font-weight: 600; letter-spacing: .5px; }
+  .mark img { width: 20px; height: 20px; display: block; }
+  .grow { flex: 1; }
+  .clear { color: var(--dim); font-size: 13px; padding: 6px 10px; border-radius: 8px; }
+  .clear:hover:not(:disabled) { color: var(--text); background: var(--panel); }
+  .clear:disabled { color: var(--faint); }
+  main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .dim { color: var(--dim); }
+  .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; }
+  .empty > img { width: 40px; height: 40px; display: block; }
+  .hello { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+  .lead { font-size: 17px; }
+  .hello .dim { font-size: 14px; }
+  .facts { max-width: 440px; display: grid; grid-template-columns: 56px 1fr; gap: 8px 12px; font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; text-wrap: pretty; }
+  .nb { white-space: nowrap; }
+  .log { width: 100%; max-width: 680px; margin: auto auto 0; padding: 24px 20px; display: flex; flex-direction: column; gap: 28px; }
+  .turn { display: flex; flex-direction: column; gap: 12px; }
+  .thinking { color: var(--dim); font-size: 17px; letter-spacing: 2px; }
 </style>

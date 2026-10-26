@@ -28,6 +28,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 from PIL import Image
 
+import release
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.expanduser(os.environ.get("ORGANIC_PATH", "~/organic-learning")))
 SIZE = 64
@@ -58,7 +60,17 @@ def brain_for(level):
         LOADED["brain"] = None  # free the previous one first
         LOADED["brain"] = pickle.load(open(os.path.join(ROOT, "models", level + ".pkl"), "rb"))
         LOADED["id"] = level
+        backfill(level, LOADED["brain"])
     return LOADED["brain"]
+
+
+def backfill(level, brain):
+    """Cards released before parameters were counted get the count the first time their brain loads."""
+    path = os.path.join(ROOT, "levels", level + ".json")
+    card = json.load(open(path))
+    if "parameters" not in card:
+        card["parameters"] = release.parameters(brain)
+        json.dump(card, open(path, "w"), indent=1)
 
 
 def picture(data_url):

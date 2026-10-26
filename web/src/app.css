@@ -1,10 +1,11 @@
 :root {
-  --bg: #0b0b0c; --panel: #151517; --line: #26262a; --text: #f2f2f2; --dim: #8b8b92; --me: #1f1f23; --eye: #f2f2f2;
+  --bg: #0b0b0c; --panel: #151517; --line: #26262a; --hair: #1a1a1d; --edge: #3a3a40;
+  --text: #f2f2f2; --dim: #8b8b92; --faint: #5c5c63; --me: #1f1f23; --eye: #f2f2f2;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body, #app { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif; }
-button, select, textarea { font: inherit; color: var(--text); }
-button, select { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
-button:disabled { opacity: .5; cursor: default; }
+button, textarea { font: inherit; color: var(--text); }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+button:disabled { cursor: default; }
