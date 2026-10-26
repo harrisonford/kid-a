@@ -2,7 +2,7 @@
   // one side of a turn; for the kid's replies to a picture, the picture again with where its eye looked
   let { m } = $props()
   const meta = $derived(m.who !== 'kid' ? '' : m.error ? `error: ${m.error}` :
-    [`${m.ticks} ticks`, m.copied && 'repeating what it heard', m.gaze && `looked at ${m.gaze.length} ${m.gaze.length === 1 ? 'place' : 'places'}`, `${m.ms} ms`].filter(Boolean).join(' · '))
+    `${m.ticks} ticks · ${m.ms} ms`)
 </script>
 
 {#if m.who === 'me'}
