@@ -1,0 +1,6 @@
+[Unit]
+Description=kid-a: release newly passed levels
+[Service]
+Type=oneshot
+WorkingDirectory=/home/archkris/kid-a
+ExecStart=/home/archkris/kid-a/autorelease.sh
