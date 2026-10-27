@@ -65,11 +65,11 @@ def brain_for(level):
 
 
 def backfill(level, brain):
-    """Cards released before parameters were counted get the count the first time their brain loads."""
+    """Cards released before sizes were measured get them the first time their brain loads."""
     path = os.path.join(ROOT, "levels", level + ".json")
     card = json.load(open(path))
-    if "parameters" not in card:
-        card["parameters"] = release.parameters(brain)
+    if "memory_bytes" not in card:
+        release.size(card, brain)
         json.dump(card, open(path, "w"), indent=1)
 
 

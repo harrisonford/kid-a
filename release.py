@@ -1,7 +1,7 @@
 """Release a level: freeze a brain that passed a curriculum stage and describe it.
 
     python release.py ~/organic-learning/out/levels/kid_s0_B
-    python release.py --count L0         # add the parameter count to an older card
+    python release.py --count L0         # add parameters and memory to an older card
 
 Copies the brain (as it was when it passed the stage) to models/<level>.pkl
 (not in git: large) and writes levels/<level>.json, the level's card: what it
@@ -45,6 +45,24 @@ LEVELS = {
 }
 
 
+def _parts(brain):
+    """Every cortex and every array in the brain, each once."""
+    seen, stack = set(), [brain]
+    while stack:
+        o = stack.pop()
+        if id(o) in seen or o is None or isinstance(o, (str, bytes, int, float, bool)):
+            continue
+        seen.add(id(o))
+        if isinstance(o, np.ndarray) or type(o).__name__ == "Cortex":
+            yield o
+        if isinstance(o, dict):
+            stack.extend(o.values())
+        elif isinstance(o, (list, tuple, set, frozenset)):
+            stack.extend(o)
+        elif hasattr(o, "__dict__"):
+            stack.extend(vars(o).values())
+
+
 def parameters(brain):
     """How many learned numbers the brain holds.
 
@@ -54,34 +72,35 @@ def parameters(brain):
     myelin, stability and patience, plus its associations. Any other float array
     in the brain (outside a cortex) counts whole.
     """
-    total, seen, stack = 0, set(), [brain]
-    while stack:
-        o = stack.pop()
-        if id(o) in seen or o is None or isinstance(o, (str, bytes, int, float, bool)):
-            continue
-        seen.add(id(o))
-        if isinstance(o, np.ndarray):
-            total += o.size if o.dtype.kind == "f" else 0
-        elif type(o).__name__ == "Cortex":
+    parts = list(_parts(brain))
+    inside = {id(v) for c in parts if type(c).__name__ == "Cortex" for v in vars(c).values() if isinstance(v, np.ndarray)}
+    total = 0
+    for o in parts:
+        if type(o).__name__ == "Cortex":
             C, reach = o.C, int(o.reach[: o.C].sum())
             total += reach * (1 + o.n) + C * o.n * len(o.outputs) + 3 * C + sum(len(v) for v in o.assoc.values())
-        elif isinstance(o, dict):
-            stack.extend(o.values())
-        elif isinstance(o, (list, tuple, set, frozenset)):
-            stack.extend(o)
-        elif hasattr(o, "__dict__"):
-            stack.extend(vars(o).values())
+        elif o.dtype.kind == "f" and id(o) not in inside:
+            total += o.size
     return int(total)
 
 
+def memory(brain):
+    """Bytes the brain takes in RAM to run: all its arrays, preallocated room included (within ~1% of the measured RSS)."""
+    return int(sum(o.nbytes for o in _parts(brain) if isinstance(o, np.ndarray)))
+
+
+def size(card, brain):
+    card["parameters"], card["memory_bytes"] = parameters(brain), memory(brain)
+
+
 def count(lid):
-    """Measure a released level's brain and write the count into its card (cards from before parameters were counted)."""
+    """Measure a released level's brain and write its size into its card (cards from before sizes were measured)."""
     sys.path.insert(0, ORGANIC)
     path = os.path.join(ROOT, "levels", lid + ".json")
     card = json.load(open(path))
-    card["parameters"] = parameters(pickle.load(open(os.path.join(ROOT, "models", lid + ".pkl"), "rb")))
+    size(card, pickle.load(open(os.path.join(ROOT, "models", lid + ".pkl"), "rb")))
     json.dump(card, open(path, "w"), indent=1)
-    return card["parameters"]
+    return card["parameters"], card["memory_bytes"]
 
 
 def main(stem):
@@ -95,11 +114,11 @@ def main(stem):
     card = {
         "id": lid, "name": name, "human_age": age, "summary": summary, "can": can, "cannot": cannot,
         "stage": stage, "brain": card_in.get("brain"), "moments_lived": card_in["age"], "clusters": card_in["clusters"],
-        "parameters": parameters(pickle.load(open(stem + ".pkl", "rb"))),
         "scores": {s: {"lenient": round(v["score"], 3), "exact": round(v["exact"], 3), "ticks": round(v["tick"], 1)} for s, v in card_in["measure"].items()},
         "passed": {s: round(v, 3) for s, v in card_in["passed"].items()},
         "released": datetime.date.today().isoformat(), "organic_learning_commit": commit, "source": os.path.basename(stem),
     }
+    size(card, pickle.load(open(stem + ".pkl", "rb")))
     os.makedirs(os.path.join(ROOT, "levels"), exist_ok=True)
     json.dump(card, open(os.path.join(ROOT, "levels", lid + ".json"), "w"), indent=1)
     print(json.dumps(card, indent=1))

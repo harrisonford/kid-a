@@ -10,6 +10,7 @@
   }
   const num = (n) => n.toLocaleString('en-US')
   const short = (n) => n.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })
+  const gb = (b) => (b / 1e9).toLocaleString('en-US', { maximumFractionDigits: 1 })
 
   let levels = $state([])
   let level = $state(store.get('kid-a:level', null))
@@ -87,9 +88,8 @@
             <div class="dim">can't</div><div class="dim">{card.cannot}</div>
             <div class="dim">size</div>
             <div>
-              {#if card.parameters != null}<span class="nb" title="{num(card.parameters)} parameters">{short(card.parameters)} parameters</span>
-                <span class="dim"><span class="nb">· {num(card.clusters)} clusters</span> <span class="nb">· {num(card.moments_lived)} moments lived</span></span>
-              {:else}<span class="nb">{num(card.clusters)} clusters</span> <span class="dim nb">· {num(card.moments_lived)} moments lived</span>{/if}
+              {#if card.parameters != null}<span class="nb" title="{num(card.parameters)} parameters">{short(card.parameters)} parameters</span>{/if}
+              {#if card.memory_bytes != null}<span class="dim nb">· {gb(card.memory_bytes)} GB of RAM</span>{/if}
             </div>
           </div>
         {:else if levels.length === 0}
