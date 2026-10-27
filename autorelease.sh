@@ -3,9 +3,9 @@
 # (run by the kid-a-release timer). A promotion in the curriculum is the release criterion.
 cd "$(dirname "$0")"
 PY=/home/archkris/organic-learning/.venv/bin/python
-for cand in /home/archkris/organic-learning/out/levels/kid_s1_*.json; do
+for cand in /home/archkris/organic-learning/out/levels/kid_s2_*.json; do
   [ -e "$cand" ] || continue
-  stage=$(basename "$cand" .json); stage=${stage#kid_s1_}
+  stage=$(basename "$cand" .json); stage=${stage#kid_s2_}
   id=$($PY -c "import release; print(release.LEVELS.get('$stage', ('',))[0])")
   [ -n "$id" ] && [ ! -f "levels/$id.json" ] && $PY release.py "${cand%.json}" > /dev/null && echo "released $id ($stage)"
 done
