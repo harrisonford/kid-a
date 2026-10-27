@@ -10,11 +10,15 @@ Endpoints
                         -> {"answer", "ticks", "gaze", "gaze_xy", "copied", "ms", "level"}
 
 Brains are frozen: they answer with learn=False, so nothing they hear here
-changes them. One brain is kept in memory at a time (they are large).
+changes them. One brain is kept in memory at a time (they are large), and only
+while it is being talked to: after IDLE seconds without a chat it is unloaded so
+training has the RAM; the next chat loads it again (a couple of seconds).
 No database: the chat history lives in the browser.
 """
 
 import base64
+import ctypes
+import gc
 import io
 import json
 import os
@@ -34,7 +38,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.expanduser(os.environ.get("ORGANIC_PATH", "~/organic-learning")))
 SIZE = 64
 LOCK = threading.Lock()
-LOADED = {"id": None, "brain": None}
+LOADED = {"id": None, "brain": None, "used": 0.0}
+IDLE = 5 * 60  # seconds without a chat before the brain is unloaded
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon"}
 
 
@@ -56,12 +61,34 @@ def levels():
 
 
 def brain_for(level):
-    if LOADED["id"] != level:
-        LOADED["brain"] = None  # free the previous one first
+    if LOADED["id"] != level or LOADED["brain"] is None:
+        unload()  # free the previous one first
         LOADED["brain"] = pickle.load(open(os.path.join(ROOT, "models", level + ".pkl"), "rb"))
         LOADED["id"] = level
         backfill(level, LOADED["brain"])
+    LOADED["used"] = time.time()
     return LOADED["brain"]
+
+
+def unload():
+    """Drop the loaded brain and hand its memory back to the system (call with LOCK held)."""
+    if LOADED["brain"] is None:
+        return
+    LOADED["brain"], LOADED["id"] = None, None
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)  # glibc keeps freed small blocks otherwise
+    except (OSError, AttributeError):
+        pass
+
+
+def reaper():
+    """Unload the brain once nobody has talked to it for IDLE seconds."""
+    while True:
+        time.sleep(30)
+        with LOCK:
+            if LOADED["brain"] is not None and time.time() - LOADED["used"] > IDLE:
+                unload()
 
 
 def backfill(level, brain):
@@ -121,7 +148,8 @@ class Handler(BaseHTTPRequestHandler):
                 brain = brain_for(level)
                 said, tick, _, path, _, _ = brain.live(img, text, learn=False, explore=False)
                 copied = bool(getattr(brain, "copied", False))
-            targets = brain.eye.sensor.targets  # fixation centres in the 64x64 view
+                targets = brain.eye.sensor.targets  # fixation centres in the 64x64 view
+                del brain  # only LOADED holds it, so unload() can free it
             gaze_xy = [[round(float(targets[p][0]) / SIZE, 3), round(float(targets[p][1]) / SIZE, 3)] for p in path]
             self._send(200, {"answer": said or "", "ticks": int(tick), "gaze": [int(p) for p in path], "gaze_xy": gaze_xy, "copied": copied,
                              "ms": int(1000 * (time.time() - t0)), "level": level})
@@ -133,4 +161,5 @@ if __name__ == "__main__":
     host = os.environ.get("KIDA_HOST") or tailscale_ip()
     port = int(os.environ.get("KIDA_PORT", 8787))
     print(f"kid-a on http://{host}:{port}", flush=True)
+    threading.Thread(target=reaper, daemon=True).start()
     ThreadingHTTPServer((host, port), Handler).serve_forever()
