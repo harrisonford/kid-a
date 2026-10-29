@@ -7,11 +7,11 @@
  "cannot": "say real words on purpose, repeat you, answer anything",
  "stage": "BB",
  "brain": "SpeakingBrain",
- "moments_lived": 1000,
+ "moments_lived": 15000,
  "clusters": 0,
  "scores": {
   "BB": {
-   "lenient": 0.253,
+   "lenient": 0.196,
    "exact": 0.0,
    "ticks": 0.0
   },
@@ -22,11 +22,11 @@
   }
  },
  "passed": {
-  "BB": 0.253
+  "BB": 0.196
  },
  "released": "2026-10-29",
- "organic_learning_commit": "43b62a0",
+ "organic_learning_commit": "e501163",
  "source": "babbler_BB",
- "parameters": 3522069,
- "memory_bytes": 19854476
+ "parameters": 12789705,
+ "memory_bytes": 56925020
 }
