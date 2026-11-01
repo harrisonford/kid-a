@@ -1,0 +1,32 @@
+{
+ "id": "L1",
+ "name": "babbler",
+ "human_age": "8-month-old",
+ "summary": "babbles in the sounds of the language it hears",
+ "can": "Talk to it: it babbles back in fragments that sound like what it has heard (\"is this\", \"a books\"). No words yet.",
+ "cannot": "say real words on purpose, repeat you, answer anything",
+ "stage": "BB",
+ "brain": "SpeakingBrain",
+ "moments_lived": 5000,
+ "clusters": 0,
+ "scores": {
+  "BB": {
+   "lenient": 0.216,
+   "exact": 0.0,
+   "ticks": 0.0
+  },
+  "B": {
+   "lenient": 0.0,
+   "exact": 0.0,
+   "ticks": 12.0
+  }
+ },
+ "passed": {
+  "BB": 0.216
+ },
+ "released": "2026-11-01",
+ "organic_learning_commit": "528f7b9",
+ "source": "kid_s3_BB",
+ "parameters": 8101129,
+ "memory_bytes": 7407521052
+}
