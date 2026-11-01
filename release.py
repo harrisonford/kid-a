@@ -115,6 +115,8 @@ def main(stem):
     brain = pickle.load(open(stem + ".pkl", "rb"))
     if hasattr(brain, "babble"):  # a served level babbles when it has nothing to say
         brain.babble_when_silent = True
+    if hasattr(brain.orch, "shrink"):  # frozen: drop the room training kept for growth
+        brain.orch.shrink()
     with open(os.path.join(ROOT, "models", lid + ".pkl"), "wb") as f:
         pickle.dump(brain, f)
     commit = subprocess.run(["git", "-C", ORGANIC, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
