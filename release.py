@@ -112,13 +112,17 @@ def main(stem):
     lid, name, age, summary, can, cannot = LEVELS[stage]
     sys.path.insert(0, ORGANIC)  # to unpickle the brain and count its parameters
     os.makedirs(os.path.join(ROOT, "models"), exist_ok=True)
-    brain = pickle.load(open(stem + ".pkl", "rb"))
-    if hasattr(brain, "babble"):  # a served level babbles when it has nothing to say
-        brain.babble_when_silent = True
-    if hasattr(brain.orch, "shrink"):  # frozen: drop the room training kept for growth
-        brain.orch.shrink()
-    with open(os.path.join(ROOT, "models", lid + ".pkl"), "wb") as f:
-        pickle.dump(brain, f)
+    brain = None
+    if card_in.get("frozen"):  # training already wrote it trimmed and ready to serve: just copy (no brain in RAM)
+        shutil.copy(stem + ".pkl", os.path.join(ROOT, "models", lid + ".pkl"))
+    else:
+        brain = pickle.load(open(stem + ".pkl", "rb"))
+        if hasattr(brain, "babble"):  # a served level babbles when it has nothing to say
+            brain.babble_when_silent = True
+        if hasattr(brain.orch, "shrink"):  # frozen: drop the room training kept for growth
+            brain.orch.shrink()
+        with open(os.path.join(ROOT, "models", lid + ".pkl"), "wb") as f:
+            pickle.dump(brain, f)
     commit = subprocess.run(["git", "-C", ORGANIC, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     card = {
         "id": lid, "name": name, "human_age": age, "summary": summary, "can": can, "cannot": cannot,
@@ -127,7 +131,10 @@ def main(stem):
         "passed": {s: round(v, 3) for s, v in card_in["passed"].items()},
         "released": datetime.date.today().isoformat(), "organic_learning_commit": commit, "source": os.path.basename(stem),
     }
-    size(card, brain)
+    if brain is None:
+        card["parameters"], card["memory_bytes"] = card_in["parameters"], card_in["memory_bytes"]
+    else:
+        size(card, brain)
     os.makedirs(os.path.join(ROOT, "levels"), exist_ok=True)
     json.dump(card, open(os.path.join(ROOT, "levels", lid + ".json"), "w"), indent=1)
     print(json.dumps(card, indent=1))
