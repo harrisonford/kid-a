@@ -60,9 +60,25 @@ def levels():
     return out
 
 
+class TooBig(Exception):
+    pass
+
+
+def available_bytes():
+    for line in open("/proc/meminfo"):
+        if line.startswith("MemAvailable:"):
+            return int(line.split()[1]) * 1024
+    return 0
+
+
 def brain_for(level):
     if LOADED["id"] != level or LOADED["brain"] is None:
         unload()  # free the previous one first
+        # never wake a brain the machine cannot hold: training runs next to this server
+        need = json.load(open(os.path.join(ROOT, "levels", level + ".json"))).get("memory_bytes", 0) * 1.15 + 1e9
+        if need > available_bytes():
+            raise TooBig(f"{level} needs about {need / 1e9:.0f} GB to wake up and this machine has {available_bytes() / 1e9:.1f} GB free right now "
+                         "(the next level is training next to it). Try a smaller level, or later.")
         LOADED["brain"] = pickle.load(open(os.path.join(ROOT, "models", level + ".pkl"), "rb"))
         LOADED["id"] = level
         backfill(level, LOADED["brain"])
@@ -153,6 +169,8 @@ class Handler(BaseHTTPRequestHandler):
             gaze_xy = [[round(float(targets[p][0]) / SIZE, 3), round(float(targets[p][1]) / SIZE, 3)] for p in path]
             self._send(200, {"answer": said or "", "ticks": int(tick), "gaze": [int(p) for p in path], "gaze_xy": gaze_xy, "copied": copied,
                              "ms": int(1000 * (time.time() - t0)), "level": level})
+        except TooBig as e:
+            self._send(503, {"error": str(e)})
         except Exception as e:  # noqa: BLE001
             self._send(500, {"error": str(e)})
 
