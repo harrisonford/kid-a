@@ -16,7 +16,7 @@ import struct
 
 import numpy as np
 
-BIG = 4 << 20  # arrays above this many bytes stay on disk
+BIG = 4 << 20  # arrays above this many bytes stay on disk (never under 64 KiB: pickle keeps smaller ones inside its frames)
 
 
 class _OnDisk:
