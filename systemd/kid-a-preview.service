@@ -1,0 +1,12 @@
+[Unit]
+Description=kid-a preview: the next lineage (word cells), Tailscale only, not on the Funnel
+After=network-online.target tailscaled.service
+[Service]
+WorkingDirectory=/home/archkris/kid-a
+ExecStart=/home/archkris/organic-learning/.venv/bin/python server.py
+Restart=always
+RestartSec=10
+Environment=KIDA_PORT=8788
+Environment=KIDA_DATA=preview
+[Install]
+WantedBy=default.target

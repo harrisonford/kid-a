@@ -22,6 +22,8 @@ import numpy as np
 import wake
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+# where levels/ and models/ live: the released lineage by default; KIDA_DATA=preview serves another lineage beside it
+DATA = os.path.join(ROOT, os.environ.get("KIDA_DATA", ""))
 ORGANIC = os.path.expanduser(os.environ.get("ORGANIC_PATH", "~/organic-learning"))
 
 # one level per curriculum stage (organic-learning docs/CURRICULUM.md); ages are the human reference
@@ -101,9 +103,9 @@ def size(card, brain):
 def count(lid):
     """Measure a released level's brain and write its size into its card (cards from before sizes were measured)."""
     sys.path.insert(0, ORGANIC)
-    path = os.path.join(ROOT, "levels", lid + ".json")
+    path = os.path.join(DATA, "levels", lid + ".json")
     card = json.load(open(path))
-    size(card, wake.load(os.path.join(ROOT, "models", lid + ".pkl")))
+    size(card, wake.load(os.path.join(DATA, "models", lid + ".pkl")))
     json.dump(card, open(path, "w"), indent=1)
     return card["parameters"], card["memory_bytes"]
 
@@ -113,9 +115,9 @@ def main(stem):
     stage = card_in["stage"]
     lid, name, age, summary, can, cannot = LEVELS[stage]
     sys.path.insert(0, ORGANIC)  # to unpickle the brain and count its parameters
-    os.makedirs(os.path.join(ROOT, "models"), exist_ok=True)
+    os.makedirs(os.path.join(DATA, "models"), exist_ok=True)
     # the server may have the level it replaces mapped: write beside it, then swap whole
-    dst = os.path.join(ROOT, "models", lid + ".pkl")
+    dst = os.path.join(DATA, "models", lid + ".pkl")
     if card_in.get("frozen"):  # training already wrote it trimmed and ready to serve: just copy (no brain in RAM)
         shutil.copy(stem + ".pkl", dst + ".new")
     else:
@@ -137,8 +139,8 @@ def main(stem):
         "released": datetime.date.today().isoformat(), "organic_learning_commit": commit, "source": os.path.basename(stem),
     }
     size(card, wake.load(dst))  # measured as it is served: nothing big comes into RAM
-    os.makedirs(os.path.join(ROOT, "levels"), exist_ok=True)
-    json.dump(card, open(os.path.join(ROOT, "levels", lid + ".json"), "w"), indent=1)
+    os.makedirs(os.path.join(DATA, "levels"), exist_ok=True)
+    json.dump(card, open(os.path.join(DATA, "levels", lid + ".json"), "w"), indent=1)
     print(json.dumps(card, indent=1))
 
 

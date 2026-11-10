@@ -1,0 +1,44 @@
+{
+ "id": "L3",
+ "name": "first words",
+ "human_age": "18-month-old",
+ "summary": "names familiar things it sees and hears",
+ "can": "Show it a dog, a cat, a car, a cup, a banana... and ask \"what is this?\". Animal sounds, hi, bye, more.",
+ "cannot": "colours, counting, yes/no questions, sentences",
+ "stage": "W1",
+ "brain": "SpeakingBrain",
+ "moments_lived": 15000,
+ "clusters": 1991,
+ "scores": {
+  "BB": {
+   "lenient": 0.259,
+   "exact": 0.0,
+   "ticks": 0.0
+  },
+  "B": {
+   "lenient": 0.916,
+   "exact": 0.837,
+   "ticks": 10.5
+  },
+  "W1": {
+   "lenient": 0.442,
+   "exact": 0.413,
+   "ticks": 5.1
+  },
+  "W2": {
+   "lenient": 0.057,
+   "exact": 0.023,
+   "ticks": 9.0
+  }
+ },
+ "passed": {
+  "BB": 0.201,
+  "B": 0.95,
+  "W1": 0.442
+ },
+ "released": "2026-11-10",
+ "organic_learning_commit": "6b6e907",
+ "source": "words_s0_W1",
+ "parameters": 219501786,
+ "memory_bytes": 170613424
+}

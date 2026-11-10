@@ -2,6 +2,7 @@
 
     python server.py                     # listens on the Tailscale address, port 8787
     KIDA_HOST=0.0.0.0 KIDA_PORT=8787 ORGANIC_PATH=~/organic-learning python server.py
+    KIDA_DATA=preview KIDA_PORT=8788 python server.py   # another lineage (preview/levels, preview/models), tailnet only
 
 Endpoints
   GET  /                the chat app (Svelte 5, built from web/ into static/)
@@ -36,6 +37,8 @@ import release
 import wake
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+# where levels/ and models/ live: the released lineage by default; KIDA_DATA=preview serves another lineage beside it
+DATA = os.path.join(ROOT, os.environ.get("KIDA_DATA", ""))
 sys.path.insert(0, os.path.expanduser(os.environ.get("ORGANIC_PATH", "~/organic-learning")))
 SIZE = 64
 LOCK = threading.Lock()
@@ -53,10 +56,10 @@ def tailscale_ip():
 
 def levels():
     out = []
-    for f in sorted(os.listdir(os.path.join(ROOT, "levels"))):
+    for f in sorted(os.listdir(os.path.join(DATA, "levels"))):
         if f.endswith(".json"):
-            card = json.load(open(os.path.join(ROOT, "levels", f)))
-            card["available"] = os.path.exists(os.path.join(ROOT, "models", card["id"] + ".pkl"))
+            card = json.load(open(os.path.join(DATA, "levels", f)))
+            card["available"] = os.path.exists(os.path.join(DATA, "models", card["id"] + ".pkl"))
             out.append(card)
     return out
 
@@ -78,7 +81,7 @@ def stamp(path):
 
 
 def brain_for(level):
-    path = os.path.join(ROOT, "models", level + ".pkl")
+    path = os.path.join(DATA, "models", level + ".pkl")
     if LOADED["id"] != level or LOADED["brain"] is None or LOADED["file"] != stamp(path):  # another level, asleep, or released again
         unload()  # free the previous one first
         brain = wake.load(path)  # its big arrays stay on disk
@@ -116,7 +119,7 @@ def reaper():
 
 def backfill(level, brain):
     """Cards released before sizes were measured get them the first time their brain loads."""
-    path = os.path.join(ROOT, "levels", level + ".json")
+    path = os.path.join(DATA, "levels", level + ".json")
     card = json.load(open(path))
     if "memory_bytes" not in card:
         release.size(card, brain)

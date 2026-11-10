@@ -1,0 +1,8 @@
+[Unit]
+Description=kid-a preview: release newly passed levels of the preview lineage
+[Service]
+Type=oneshot
+WorkingDirectory=/home/archkris/kid-a
+Environment=LIFE=words_s0
+Environment=KIDA_DATA=preview
+ExecStart=/home/archkris/kid-a/autorelease.sh

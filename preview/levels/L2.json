@@ -1,0 +1,38 @@
+{
+ "id": "L2",
+ "name": "echo",
+ "human_age": "12-month-old",
+ "summary": "repeats words it hears, babbles when unsure",
+ "can": "Say a word (\"ball!\", \"say doggy\") and it says it back. It knows ~60 first words well and tries to copy any word you say.",
+ "cannot": "answer questions, name things in pictures, make sentences",
+ "stage": "B",
+ "brain": "SpeakingBrain",
+ "moments_lived": 10000,
+ "clusters": 1954,
+ "scores": {
+  "BB": {
+   "lenient": 0.229,
+   "exact": 0.0,
+   "ticks": 0.0
+  },
+  "B": {
+   "lenient": 0.95,
+   "exact": 0.907,
+   "ticks": 9.4
+  },
+  "W1": {
+   "lenient": 0.133,
+   "exact": 0.11,
+   "ticks": 12.7
+  }
+ },
+ "passed": {
+  "BB": 0.201,
+  "B": 0.95
+ },
+ "released": "2026-11-10",
+ "organic_learning_commit": "6b6e907",
+ "source": "words_s0_B",
+ "parameters": 212090678,
+ "memory_bytes": 155590680
+}
