@@ -10,9 +10,10 @@ Endpoints
                         -> {"answer", "ticks", "gaze", "gaze_xy", "copied", "ms", "level"}
 
 Brains are frozen: they answer with learn=False, so nothing they hear here
-changes them. One brain is kept in memory at a time (they are large), and only
-while it is being talked to: after IDLE seconds without a chat it is unloaded so
-training has the RAM; the next chat loads it again (a couple of seconds).
+changes them. A brain is not loaded whole: its big arrays stay on disk and only
+what every reply reads is held in RAM (wake.py). One brain is awake at a time,
+and only while it is being talked to: after IDLE seconds without a chat it is
+dropped so training has the RAM; the next chat wakes it again (under a second).
 No database: the chat history lives in the browser.
 """
 
@@ -22,7 +23,6 @@ import gc
 import io
 import json
 import os
-import pickle
 import subprocess
 import sys
 import threading
@@ -33,12 +33,13 @@ import numpy as np
 from PIL import Image
 
 import release
+import wake
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.expanduser(os.environ.get("ORGANIC_PATH", "~/organic-learning")))
 SIZE = 64
 LOCK = threading.Lock()
-LOADED = {"id": None, "brain": None, "used": 0.0}
+LOADED = {"id": None, "brain": None, "file": None, "used": 0.0}
 IDLE = 5 * 60  # seconds without a chat before the brain is unloaded
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon"}
 
@@ -71,23 +72,29 @@ def available_bytes():
     return 0
 
 
+def stamp(path):
+    st = os.stat(path)
+    return st.st_ino, st.st_mtime
+
+
 def brain_for(level):
-    if LOADED["id"] != level or LOADED["brain"] is None:
+    path = os.path.join(ROOT, "models", level + ".pkl")
+    if LOADED["id"] != level or LOADED["brain"] is None or LOADED["file"] != stamp(path):  # another level, asleep, or released again
         unload()  # free the previous one first
-        # never wake a brain the machine cannot hold: training runs next to this server
-        need = json.load(open(os.path.join(ROOT, "levels", level + ".json"))).get("memory_bytes", 0) * 1.15 + 1e9
+        brain = wake.load(path)  # its big arrays stay on disk
+        # never hold a brain the machine has no room for: training runs next to this server
+        need = wake.to_hold(brain) * 1.15 + 0.3e9
         if need > available_bytes():
-            raise TooBig(f"{level} needs about {need / 1e9:.0f} GB to wake up and this machine has {available_bytes() / 1e9:.1f} GB free right now "
+            raise TooBig(f"{level} needs about {need / 1e9:.1f} GB to wake up and this machine has {available_bytes() / 1e9:.1f} GB free right now "
                          "(the next level is training next to it). Try a smaller level, or later.")
-        LOADED["brain"] = pickle.load(open(os.path.join(ROOT, "models", level + ".pkl"), "rb"))
-        LOADED["id"] = level
+        LOADED["brain"], LOADED["id"], LOADED["file"] = wake.hold(brain), level, stamp(path)
         backfill(level, LOADED["brain"])
     LOADED["used"] = time.time()
     return LOADED["brain"]
 
 
 def unload():
-    """Drop the loaded brain and hand its memory back to the system (call with LOCK held)."""
+    """Drop the awake brain and hand its memory back to the system (call with LOCK held)."""
     if LOADED["brain"] is None:
         return
     LOADED["brain"], LOADED["id"] = None, None

@@ -19,6 +19,8 @@ import sys
 
 import numpy as np
 
+import wake
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 ORGANIC = os.path.expanduser(os.environ.get("ORGANIC_PATH", "~/organic-learning"))
 
@@ -88,8 +90,8 @@ def parameters(brain):
 
 
 def memory(brain):
-    """Bytes the brain takes in RAM to run: all its arrays, preallocated room included (within ~1% of the measured RSS)."""
-    return int(sum(o.nbytes for o in _parts(brain) if isinstance(o, np.ndarray)))
+    """Bytes the brain takes in RAM to run. Its big arrays stay on disk (wake.py): what counts is what the server holds."""
+    return int(sum(o.nbytes for o in _parts(brain) if isinstance(o, np.ndarray) and not isinstance(o, np.memmap))) + wake.to_hold(brain)
 
 
 def size(card, brain):
@@ -101,7 +103,7 @@ def count(lid):
     sys.path.insert(0, ORGANIC)
     path = os.path.join(ROOT, "levels", lid + ".json")
     card = json.load(open(path))
-    size(card, pickle.load(open(os.path.join(ROOT, "models", lid + ".pkl"), "rb")))
+    size(card, wake.load(os.path.join(ROOT, "models", lid + ".pkl")))
     json.dump(card, open(path, "w"), indent=1)
     return card["parameters"], card["memory_bytes"]
 
@@ -112,17 +114,20 @@ def main(stem):
     lid, name, age, summary, can, cannot = LEVELS[stage]
     sys.path.insert(0, ORGANIC)  # to unpickle the brain and count its parameters
     os.makedirs(os.path.join(ROOT, "models"), exist_ok=True)
-    brain = None
+    # the server may have the level it replaces mapped: write beside it, then swap whole
+    dst = os.path.join(ROOT, "models", lid + ".pkl")
     if card_in.get("frozen"):  # training already wrote it trimmed and ready to serve: just copy (no brain in RAM)
-        shutil.copy(stem + ".pkl", os.path.join(ROOT, "models", lid + ".pkl"))
+        shutil.copy(stem + ".pkl", dst + ".new")
     else:
         brain = pickle.load(open(stem + ".pkl", "rb"))
         if hasattr(brain, "babble"):  # a served level babbles when it has nothing to say
             brain.babble_when_silent = True
         if hasattr(brain.orch, "shrink"):  # frozen: drop the room training kept for growth
             brain.orch.shrink()
-        with open(os.path.join(ROOT, "models", lid + ".pkl"), "wb") as f:
+        with open(dst + ".new", "wb") as f:
             pickle.dump(brain, f)
+        del brain
+    os.replace(dst + ".new", dst)
     commit = subprocess.run(["git", "-C", ORGANIC, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     card = {
         "id": lid, "name": name, "human_age": age, "summary": summary, "can": can, "cannot": cannot,
@@ -131,10 +136,7 @@ def main(stem):
         "passed": {s: round(v, 3) for s, v in card_in["passed"].items()},
         "released": datetime.date.today().isoformat(), "organic_learning_commit": commit, "source": os.path.basename(stem),
     }
-    if brain is None:
-        card["parameters"], card["memory_bytes"] = card_in["parameters"], card_in["memory_bytes"]
-    else:
-        size(card, brain)
+    size(card, wake.load(dst))  # measured as it is served: nothing big comes into RAM
     os.makedirs(os.path.join(ROOT, "levels"), exist_ok=True)
     json.dump(card, open(os.path.join(ROOT, "levels", lid + ".json"), "w"), indent=1)
     print(json.dumps(card, indent=1))
