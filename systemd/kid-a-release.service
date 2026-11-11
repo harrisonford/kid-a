@@ -3,4 +3,5 @@ Description=kid-a: release newly passed levels
 [Service]
 Type=oneshot
 WorkingDirectory=/home/archkris/kid-a
+Environment=LIFE=words_s0
 ExecStart=/home/archkris/kid-a/autorelease.sh

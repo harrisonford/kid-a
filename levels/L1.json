@@ -11,7 +11,7 @@
  "clusters": 0,
  "scores": {
   "BB": {
-   "lenient": 0.216,
+   "lenient": 0.201,
    "exact": 0.0,
    "ticks": 0.0
   },
@@ -22,11 +22,11 @@
   }
  },
  "passed": {
-  "BB": 0.216
+  "BB": 0.201
  },
- "released": "2026-11-01",
- "organic_learning_commit": "528f7b9",
- "source": "kid_s3_BB",
- "parameters": 8101129,
- "memory_bytes": 32742672
+ "released": "2026-11-10",
+ "organic_learning_commit": "6b6e907",
+ "source": "words_s0_BB",
+ "parameters": 23928914,
+ "memory_bytes": 66743356
 }

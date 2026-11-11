@@ -1,0 +1,46 @@
+{
+ "id": "L4",
+ "name": "two words (still learning)",
+ "human_age": "2-year-old",
+ "summary": "the same brain 100,000 moments later; it did NOT pass two words (0.41, pass mark 0.5), shown as it is",
+ "can": "Text: it answers from its own word cells more than it repeats you (\"do you have a cat?\" -> \"yes\", \"where is mommy?\" -> \"here\"). Pictures: names things as L3 does; tries colours, how many, yes/no.",
+ "cannot": "be relied on for colours, counting or yes/no (about base rate); conversation (it has never had one); sentences",
+ "stage": "W2",
+ "brain": "SpeakingBrain",
+ "moments_lived": 115000,
+ "clusters": 1959,
+ "scores": {
+  "BB": {
+   "lenient": 0.303,
+   "exact": 0.0,
+   "ticks": 0.0
+  },
+  "B": {
+   "lenient": 0.742,
+   "exact": 0.587,
+   "ticks": 10.3
+  },
+  "W1": {
+   "lenient": 0.408,
+   "exact": 0.367,
+   "ticks": 5.7
+  },
+  "W2": {
+   "lenient": 0.414,
+   "exact": 0.393,
+   "ticks": 5.2
+  },
+  "P": {
+   "lenient": 0.052,
+   "exact": 0.037,
+   "ticks": 8.5
+  }
+ },
+ "passed": {},
+ "released": "2026-11-11",
+ "organic_learning_commit": "6b6e907",
+ "source": "words_s0_W2_inprogress",
+ "parameters": 268482395,
+ "memory_bytes": 275589044,
+ "in_progress": true
+}

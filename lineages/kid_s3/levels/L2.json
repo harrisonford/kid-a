@@ -8,31 +8,31 @@
  "stage": "B",
  "brain": "SpeakingBrain",
  "moments_lived": 10000,
- "clusters": 1954,
+ "clusters": 14171,
  "scores": {
   "BB": {
-   "lenient": 0.229,
+   "lenient": 0.215,
    "exact": 0.0,
    "ticks": 0.0
   },
   "B": {
-   "lenient": 0.95,
-   "exact": 0.907,
-   "ticks": 9.4
+   "lenient": 0.87,
+   "exact": 0.769,
+   "ticks": 8.6
   },
   "W1": {
-   "lenient": 0.133,
-   "exact": 0.11,
-   "ticks": 12.7
+   "lenient": 0.129,
+   "exact": 0.1,
+   "ticks": 13.8
   }
  },
  "passed": {
-  "BB": 0.201,
-  "B": 0.95
+  "BB": 0.216,
+  "B": 0.87
  },
- "released": "2026-11-10",
- "organic_learning_commit": "6b6e907",
- "source": "words_s0_B",
- "parameters": 212090678,
- "memory_bytes": 155590680
+ "released": "2026-11-01",
+ "organic_learning_commit": "528f7b9",
+ "source": "kid_s3_B",
+ "parameters": 1198261832,
+ "memory_bytes": 553657424
 }
